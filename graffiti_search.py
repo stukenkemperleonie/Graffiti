@@ -83,7 +83,7 @@ def search(query_image, top_k, alpha):
 
     final_score = alpha * model_sim + (1 - alpha) * color_sim
 
-    idx = final_score.argsort()[::-1][:top_k]
+    idx = final_score.argsort()[::-1][:top_k] # .argsort() sorts indices of ascending values, [::-1] - [start:stop:step] reverses order (indices of highest values to lowest values), keeps top-k indices
 
     return [(image_paths[i], final_score[i]) for i in idx]
 
