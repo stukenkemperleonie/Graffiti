@@ -91,65 +91,24 @@ def search(query_image, top_k, alpha):
 
 #results
 
-#-------model only
-alpha = 1
-results = search(query, top_k=10, alpha=alpha)
-results = results[1:] #removes query from list
+#results
+alphas = [1, 0, 0.5]
 
-fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
+for alpha in alphas:
+    results = search(query, top_k=10, alpha=alpha)
+    results = results[1:] #removes queri from list
 
-fig.suptitle(f"model weight: {alpha:.0%}", fontsize=16)
-axes[0].imshow(Image.open(query))
-axes[0].set_title("QUERY")
-axes[0].axis("off")
+    fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
 
-for ax, (path, score) in zip(axes[1:], results):
-    ax.imshow(Image.open(path))
-    ax.set_title(f"{score:.0%}")
-    ax.axis("off")
+    fig.suptitle(f"model weight: {alpha:.0%}", fontsize=16)
+    axes[0].imshow(Image.open(query))
+    axes[0].set_title("QUERY")
+    axes[0].axis("off")
 
-plt.tight_layout()
-plt.show()
+    for ax, (path, score) in zip(axes[1:], results):
+        ax.imshow(Image.open(path))
+        ax.set_title(f"{score:.0%}")
+        ax.axis("off")
 
-#------ color only
-alpha = 0
-results = search(query, top_k=10, alpha=alpha)
-results = results[1:] #removes query from list
-
-fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
-
-fig.suptitle(f"model weight: {alpha:.0%}, color weight: {1-alpha:.0%}", fontsize=16)
-axes[0].imshow(Image.open(query))
-axes[0].set_title("QUERY")
-axes[0].axis("off")
-
-
-for ax, (path, score) in zip(axes[1:], results):
-    ax.imshow(Image.open(path))
-    ax.set_title(f"{score:.0%}")
-    ax.axis("off")
-
-plt.tight_layout()
-plt.show()
-
-
-#------ combination
-alpha = 0.5
-results = search(query, top_k=10, alpha=0.5)
-results = results[1:] #removes query from list
-
-fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
-
-fig.suptitle(f"model weight: {alpha:.0%}, color weight: {1-alpha:.0%}", fontsize=16)
-axes[0].imshow(Image.open(query))
-axes[0].set_title("QUERY")
-axes[0].axis("off")
-
-
-for ax, (path, score) in zip(axes[1:], results):
-    ax.imshow(Image.open(path))
-    ax.set_title(f"{score:.0%}")
-    ax.axis("off")
-
-plt.tight_layout()
+    plt.tight_layout()
 plt.show()
