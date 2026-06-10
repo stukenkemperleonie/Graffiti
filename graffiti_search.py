@@ -7,10 +7,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 import os
 
-# -----------------------
-# Load index
-# -----------------------
-
 clip = "openai/clip-vit-base-patch32"#16 or 32, preferred 32
 vit = "google/vit-base-patch16-224-in21k"
 
@@ -38,8 +34,6 @@ color_embeddings = np.load("color_embeddings.npy")
 image_paths = np.load("image_paths.npy")
 
 model.eval()
-
-#clip features
 
 def get_model_embedding(image_path):
     image = Image.open(image_path)
@@ -97,7 +91,7 @@ def search(query_image, top_k, alpha):
 
 #results
 
-#-------model embedding
+#-------model only
 alpha = 1
 results = search(query, top_k=10, alpha=alpha)
 results = results[1:] #removes query from list
@@ -117,7 +111,7 @@ for ax, (path, score) in zip(axes[1:], results):
 plt.tight_layout()
 plt.show()
 
-#------ color embedding
+#------ color only
 alpha = 0
 results = search(query, top_k=10, alpha=alpha)
 results = results[1:] #removes query from list
