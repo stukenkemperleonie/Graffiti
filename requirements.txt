@@ -1,0 +1,7 @@
+transformers
+numpy
+torch
+pillow
+scikit-learn
+matplotlib
+requests
