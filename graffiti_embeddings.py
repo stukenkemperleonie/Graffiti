@@ -12,6 +12,7 @@ vit = "google/vit-base-patch16-224-in21k"
 
 # Model setup
 
+#choose model (clip or vit)
 model_name = vit
 
 if model_name == clip:
@@ -22,6 +23,7 @@ elif model_name == vit:
     processor = ViTImageProcessor.from_pretrained(model_name)
     model = ViTModel.from_pretrained(model_name)
 
+#evaluation only, no training
 model.eval()
 
 
@@ -29,9 +31,10 @@ def get_model_embedding(image_path):
 
     image = Image.open(image_path).convert("RGB")
 
+    #process images (resize, normalize, reshape arrays,..) to make them "usable" for the model
     inputs = processor(images=image, return_tensors="pt")
 
-    with torch.no_grad():
+    with torch.no_grad(): #calculation/storing of gradients not necessary for evaluation, speeds up the process
         if model_name == clip:
             outputs = model.get_image_features(**inputs)
 
@@ -40,7 +43,7 @@ def get_model_embedding(image_path):
 
         emb = outputs.last_hidden_state[0][0]
 
-    emb = emb.numpy()
+    emb = emb.numpy() #768-(vit) or 512 (clip)-feature vector
 
     return emb
 
@@ -51,13 +54,13 @@ def get_color_features(image_path, bins=(8, 8, 8)):
 
     hsv = mcolors.rgb_to_hsv(img)
 
-    hist, _ = np.histogramdd(
-        hsv.reshape(-1, 3),
-        bins=bins,
-        range=((0, 1), (0, 1), (0, 1))
+    hist, _ = np.histogramdd( #underscore because histogramdd returns the actual histogram counts AND the boundaries for each dimension, which we dont need. The underscore makes sure to only take the first return value (the histogram counts)
+        hsv.reshape(-1, 3), #reshape array (image) from (h*w*3) to (rows,3) so that it has 3 values per row (hsv), -1 to automatically calculate number of rows: width*heights = number of pixels = rows
+        bins=bins, #hsv each get categorized into 8 "classes"
+        range=((0, 1), (0, 1), (0, 1)) #hsv values from 0 to one, for example hue = 0.1 -> roughly red, saturation = 0 -> grey,.., so values are split into 8 bins in a range from 0 to 1
     )
 
-    hist = hist.flatten()
+    hist = hist.flatten() #(8,8,8) -> (512,)
     return hist
 
 
@@ -80,6 +83,7 @@ for filename in os.listdir(folder):
     except Exception as e:
         print("Skipping:", filename, e)
 
+#convert lists to np.ndarrays
 model_embeddings = np.vstack(model_embeddings)
 color_embeddings = np.vstack(color_embeddings)
 
