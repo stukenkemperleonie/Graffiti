@@ -7,16 +7,17 @@ from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 import os
 
-clip = "openai/clip-vit-base-patch32"#16 or 32, preferred 32
+# -----------------------
+# Load index
+# -----------------------
+
+clip = "openai/clip-vit-base-patch32"#16 or 32 (32 preferred)
 vit = "google/vit-base-patch16-224-in21k"
 
-model_name = vit
-folder = "smallsize"
-pic = "INDIGO_2022-03-13_Z7ii-B_0052_230516T12_10_16"
+model_name = vit #vit or clip (vit preferred)
+folder = "query"
+pic = "drei" #query, eins, zwei, drei
 
-#INDIGO_2022-03-13_Z7ii-B_0052_230516T12_10_16
-#INDIGO_2022-05-16_Z7ii-B_1679_230820T15_11_23
-#INDIGO_2022-05-16_Z7ii-B_0077_230820T14_35_28
 
 query = os.path.join(folder, pic + ".png")
 
@@ -35,8 +36,10 @@ image_paths = np.load("image_paths.npy")
 
 model.eval()
 
+#clip features
+
 def get_model_embedding(image_path):
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert("RGB")
 
     inputs = processor(images=image, return_tensors="pt")
 
@@ -47,10 +50,10 @@ def get_model_embedding(image_path):
         else:
             outputs = model(**inputs)
 
-        emb = outputs.last_hidden_state[0][0]
+        emb = outputs.last_hidden_state[0][0] #CLS Token, last_hidden_state[0][1] would be the mebedding of patch 1
+
 
     emb = emb.numpy()
-
     return emb
 
 
@@ -60,30 +63,28 @@ def get_color_features(image_path, bins=(8, 8, 8)):
 
     hsv = mcolors.rgb_to_hsv(img)
 
-    hist, _ = np.histogramdd(
+    hist, _ = np.histogramdd( #underscore because histogramdd returns the actual histogram counts AND the boundaries for each dimension, which we dont need. The underscore makes sure to only take the first return value (the histogram value)
         hsv.reshape(-1, 3),
         bins=bins,
         range=((0, 1), (0, 1), (0, 1))
     )
 
     hist = hist.flatten()
-
     return hist
 
 
 
 def search(query_image, top_k, alpha):
 
-
     q_emb = get_model_embedding(query_image).reshape(1, -1)
     q_color = get_color_features(query_image).reshape(1, -1)
 
-    model_sim = cosine_similarity(q_emb, model_embeddings)[0]
+    model_sim = cosine_similarity(q_emb, model_embeddings)[0] #cosine_similarity returns (1,N) array, where N = number of embeddings the query is compared to = number of our pictures and 1 = our one query picture. We only have and need the first row.
     color_sim = cosine_similarity(q_color, color_embeddings)[0]
 
     final_score = alpha * model_sim + (1 - alpha) * color_sim
 
-    idx = final_score.argsort()[::-1][:top_k] # .argsort() sorts indices of ascending values, [::-1] - [start:stop:step] reverses order (indices of highest values to lowest values), keeps top-k indices
+    idx = final_score.argsort()[::-1][:top_k]
 
     return [(image_paths[i], final_score[i]) for i in idx]
 
@@ -91,24 +92,69 @@ def search(query_image, top_k, alpha):
 
 #results
 
-#results
-alphas = [1, 0, 0.5]
+#-------model only
+alpha = 1
+results = search(query, top_k=10, alpha=alpha)
+results = results[1:] #removes query from list
 
-for alpha in alphas:
-    results = search(query, top_k=10, alpha=alpha)
-    results = results[1:] #removes queri from list
+fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
 
-    fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
+fig.suptitle(f"model weight: {alpha:.0%}", fontsize=16)
+axes[0].imshow(Image.open(query))
+axes[0].set_title("QUERY")
+axes[0].axis("off")
 
-    fig.suptitle(f"model weight: {alpha:.0%}", fontsize=16)
-    axes[0].imshow(Image.open(query))
-    axes[0].set_title("QUERY")
-    axes[0].axis("off")
+i=0
+for ax, (path, score) in zip(axes[1:], results):
+    i+=1
+    ax.imshow(Image.open(path))
+    ax.set_title(f"Top {i}")
+    ax.axis("off")
 
-    for ax, (path, score) in zip(axes[1:], results):
-        ax.imshow(Image.open(path))
-        ax.set_title(f"{score:.0%}")
-        ax.axis("off")
+plt.tight_layout()
+plt.show()
 
-    plt.tight_layout()
+#------ color only
+alpha = 0
+results = search(query, top_k=10, alpha=alpha)
+results = results[1:] #removes query from list
+
+fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
+
+fig.suptitle(f"model weight: {alpha:.0%}, color weight: {1-alpha:.0%}", fontsize=16)
+axes[0].imshow(Image.open(query))
+axes[0].set_title("QUERY")
+axes[0].axis("off")
+
+i=0
+for ax, (path, score) in zip(axes[1:], results):
+    i += 1
+    ax.imshow(Image.open(path))
+    ax.set_title(f"Top {i}")
+    ax.axis("off")
+
+plt.tight_layout()
+plt.show()
+
+
+#------ combination
+alpha = 0.5
+results = search(query, top_k=10, alpha=0.5)
+results = results[1:] #removes query from list
+
+fig, axes = plt.subplots(1, len(results) + 1, figsize=(18, 5))
+
+fig.suptitle(f"model weight: {alpha:.0%}, color weight: {1-alpha:.0%}", fontsize=16)
+axes[0].imshow(Image.open(query))
+axes[0].set_title("QUERY")
+axes[0].axis("off")
+
+i=0
+for ax, (path, score) in zip(axes[1:], results):
+    i+=1
+    ax.imshow(Image.open(path))
+    ax.set_title(f"Top {i}")
+    ax.axis("off")
+
+plt.tight_layout()
 plt.show()

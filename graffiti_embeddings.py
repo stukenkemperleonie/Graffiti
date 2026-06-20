@@ -5,7 +5,7 @@ import torch
 from transformers import ViTImageProcessor, ViTModel, CLIPProcessor, CLIPModel
 import matplotlib.colors as mcolors
 
-folder = "smallsize"
+folder = "fullsize"
 
 clip = "openai/clip-vit-base-patch32" #or patch16
 vit = "google/vit-base-patch16-224-in21k"
