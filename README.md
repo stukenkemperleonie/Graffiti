@@ -24,7 +24,7 @@ As a complementary visual descriptor, color information is analyzed separately.
 
 ---
 
-## Similarity Computation & The $\alpha$ Parameter
+## Similarity Comparision
 
 Once the features are extracted, image similarity is calculated using **cosine similarity**. The system introduces a weighted parameter, $\alpha$ (alpha), to combine and balance the two feature domains:
 
