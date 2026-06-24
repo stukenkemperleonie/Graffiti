@@ -6,7 +6,7 @@ The goal of this project was to find out whether a visual transformation model c
 
 ## How It Works
 
-To find the perfect match, the system analyzes photos in two fundamentally different ways: **Vision Transformer Model** and **Color-Based Analysis**.
+To find the perfect match, the system analyzes photos in two ways: **Vision Transformer Model** and **Color-Based Analysis**.
 
 
 ### 1. Vision Transformer Model
